@@ -109,9 +109,19 @@ contract RPFactory is AccessControl {
     }
 
     function rejectKyc(address user) external onlyRole(ADMIN_ROLE) {
-        require(kycStatus[user] == KycStatus.Pending, "Not pending");
-        kycStatus[user] = KycStatus.Rejected;
-        pendingKycRequests.remove(user);
+        require(
+            kycStatus[user] == KycStatus.Pending || kycStatus[user] == KycStatus.Approved,
+            "Must be pending or approved"
+        );
+        
+        if (kycStatus[user] == KycStatus.Pending) {
+            kycStatus[user] = KycStatus.Rejected;
+            pendingKycRequests.remove(user); 
+        } else if (kycStatus[user] == KycStatus.Approved) {
+            // Set back to baseline (None) when rejecting an approved wallet
+            kycStatus[user] = KycStatus.None;
+        }
+        
         emit KycRejected(user);
     }
 
